@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="投资研究知识看板" />
+    <title>投资研究知识看板</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">RESEARCH LIBRARY</p>
+        <h1>投资研究知识看板</h1>
+        <p id="summary" class="subtitle">正在加载已公开的研究笔记…</p>
+        <p class="scope">仅收录：公司研究、行业研究、已处理的信息卡片</p>
+      </header>
+      <section class="controls" aria-label="检索与筛选">
+        <label class="search"><span>搜索</span><input id="search" type="search" placeholder="公司、行业、主题或正文" autocomplete="off" /></label>
+        <div id="filters" class="filters" role="group" aria-label="分类筛选"></div>
+      </section>
+      <section class="layout">
+        <aside class="sidebar">
+          <h2>研究分布</h2>
+          <div id="stats" class="stats"></div>
+          <p class="updated" id="updated"></p>
+        </aside>
+        <section class="notes-area" aria-live="polite">
+          <p id="result-count" class="result-count"></p>
+          <div id="notes" class="notes"></div>
+        </section>
+      </section>
+    </main>
+    <dialog id="note-dialog"><article><button id="close" class="close" aria-label="关闭">×</button><div id="note-detail"></div></article></dialog>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

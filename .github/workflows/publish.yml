@@ -1,0 +1,45 @@
+name: 发布知识看板
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 取得网页代码
+        uses: actions/checkout@v4
+        with:
+          path: board
+      - name: 取得私有资料仓的发布分支
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.KNOWLEDGE_SOURCE_REPOSITORY }}
+          token: ${{ secrets.KNOWLEDGE_REPO_TOKEN }}
+          path: knowledge-vault
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run build
+        working-directory: board
+        env:
+          KNOWLEDGE_BASE_DIR: ${{ github.workspace }}/knowledge-vault
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: board/docs
+      - id: deployment
+        uses: actions/deploy-pages@v4
