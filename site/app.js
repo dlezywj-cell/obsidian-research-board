@@ -56,7 +56,7 @@ function init(data) {
     const dialog = $('#note-dialog');
     dialog.classList.add('controls-visible');
     clearTimeout(controlsTimer);
-    controlsTimer = setTimeout(() => dialog.classList.remove('controls-visible'), 850);
+    controlsTimer = setTimeout(() => dialog.classList.remove('controls-visible'), 1700);
   });
   $('#note-dialog').addEventListener('click', (event) => { if (event.target === $('#note-dialog')) $('#note-dialog').close(); });
   render();
