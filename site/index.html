@@ -35,7 +35,12 @@
         <div id="notes" class="notes"></div>
       </section>
     </main>
-    <dialog id="note-dialog"><article><button id="close" class="close" aria-label="关闭">×</button><div id="note-detail"></div></article></dialog>
+    <dialog id="note-dialog">
+      <article>
+        <div class="dialog-actions"><button id="close" class="close" aria-label="关闭笔记">关闭 <span aria-hidden="true">×</span></button></div>
+        <div id="note-detail"></div>
+      </article>
+    </dialog>
     <script type="module" src="app.js"></script>
   </body>
 </html>

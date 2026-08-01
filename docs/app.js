@@ -34,7 +34,8 @@ function render() {
   document.querySelectorAll('.note-card').forEach((card) => card.addEventListener('click', () => openNote(state.notes[card.dataset.index])));
 }
 function openNote(note) {
-  $('#note-detail').innerHTML = `<div class="note-meta"><span class="badge ${note.category}">${note.category}</span><time>${escape(note.date || '日期未标注')}</time></div><h1>${escape(note.title)}</h1>${chips([...note.companies, ...note.industries, ...note.topics, ...note.tags])}<p class="path">${escape(note.path)}</p><div class="markdown">${markdown(note.content)}</div>`;
+  const bodyWithoutTitle = note.content.replace(/^#\s+.+\r?\n+/, '');
+  $('#note-detail').innerHTML = `<div class="note-meta"><span class="badge ${note.category}">${note.category}</span><time>${escape(note.date || '日期未标注')}</time></div><h1>${escape(note.title)}</h1>${chips([...note.companies, ...note.industries, ...note.topics, ...note.tags])}<p class="path">${escape(note.path)}</p><div class="markdown">${markdown(bodyWithoutTitle)}</div>`;
   $('#note-dialog').showModal();
 }
 function init(data) {
