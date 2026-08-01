@@ -1,17 +1,17 @@
 /* 阅读弹窗：手机优先，后载入以覆盖桌面样式。 */
-.dialog-actions { position:absolute; top:20px; right:24px; z-index:3; display:block; height:auto; }
-.close { display:grid; place-items:center; width:34px; height:34px; padding:0; border:0; background:#182321; color:#fff; border-radius:50%; font-size:25px; font-weight:300; line-height:1; cursor:pointer; box-shadow:0 3px 12px #10251e2e; -webkit-tap-highlight-color:transparent; }
-.close span { font-size:25px; line-height:1; margin:0; vertical-align:0; }
+.dialog-actions { position:absolute; top:0; right:0; left:0; z-index:3; display:flex; justify-content:flex-end; align-items:center; height:58px; padding:0 22px; background:#fffefa; border-bottom:1px solid #edf1ee; }
+.close { display:grid; place-items:center; width:29px; height:29px; padding:0; border:0; background:#182321; color:#fff; border-radius:50%; font-size:22px; font-weight:300; line-height:1; cursor:pointer; box-shadow:0 2px 8px #10251e24; -webkit-tap-highlight-color:transparent; }
+.close span { font-size:22px; line-height:1; margin:0; vertical-align:0; }
 .close:focus-visible { outline:2px solid #0d6b59; outline-offset:3px; }
 .close:hover { background:#0d6b59; }
 .markdown > p:first-child { padding:11px 13px; border-left:3px solid #dce6df; border-radius:0 8px 8px 0; background:#f4f7f4; color:#6b7974; font-size:14px; line-height:1.65; }
 
 @media (max-width:720px) {
-  dialog { position:fixed; inset:0; width:100dvw; max-width:none; height:100dvh; max-height:none; margin:0; border-radius:0; }
-  dialog article { padding:calc(20px + env(safe-area-inset-top)) 20px calc(38px + env(safe-area-inset-bottom)); }
-  .dialog-actions { position:fixed; top:calc(14px + env(safe-area-inset-top)); right:18px; }
-  .close { width:38px; height:38px; font-size:28px; }
-  .close span { font-size:28px; }
+  dialog { position:fixed; inset:0; width:100dvw; max-width:none; height:100dvh; max-height:none; margin:0; border-radius:0; overflow:hidden; }
+  .dialog-actions { height:calc(52px + env(safe-area-inset-top)); padding:env(safe-area-inset-top) 18px 0; }
+  dialog article { position:absolute; inset:calc(52px + env(safe-area-inset-top)) 0 0; height:auto; overflow-y:auto; padding:18px 20px calc(38px + env(safe-area-inset-bottom)); }
+  .close { width:28px; height:28px; font-size:21px; }
+  .close span { font-size:21px; }
   #note-detail > .note-meta { padding-right:52px; font-size:12px; }
   #note-detail > h1 { font-size:27px; line-height:1.17; margin:14px 50px 0 0; }
   #note-detail > .chips { gap:5px; margin:12px 0 8px; }
