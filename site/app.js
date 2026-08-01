@@ -36,6 +36,8 @@ function render() {
 function openNote(note) {
   const bodyWithoutTitle = note.content.replace(/^#\s+.+\r?\n+/, '');
   $('#note-detail').innerHTML = `<div class="note-meta"><span class="badge ${note.category}">${note.category}</span><time>${escape(note.date || '日期未标注')}</time></div><h1>${escape(note.title)}</h1>${chips([...note.companies, ...note.industries, ...note.topics, ...note.tags])}<p class="path">${escape(note.path)}</p><div class="markdown">${markdown(bodyWithoutTitle)}</div>`;
+  $('#note-dialog article').scrollTop = 0;
+  $('#back-to-top').hidden = true;
   $('#note-dialog').showModal();
 }
 function init(data) {
@@ -47,6 +49,8 @@ function init(data) {
   document.querySelectorAll('.filter').forEach((button) => button.addEventListener('click', () => { state.category = button.dataset.category; document.querySelectorAll('.filter').forEach((x) => x.classList.toggle('selected', x === button)); render(); }));
   $('#search').addEventListener('input', (event) => { state.query = event.target.value; render(); });
   $('#close').addEventListener('click', () => $('#note-dialog').close());
+  $('#back-to-top').addEventListener('click', () => $('#note-dialog article').scrollTo({ top: 0, behavior: 'smooth' }));
+  $('#note-dialog article').addEventListener('scroll', (event) => { $('#back-to-top').hidden = event.currentTarget.scrollTop < 180; });
   $('#note-dialog').addEventListener('click', (event) => { if (event.target === $('#note-dialog')) $('#note-dialog').close(); });
   render();
 }

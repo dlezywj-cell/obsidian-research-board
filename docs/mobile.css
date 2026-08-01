@@ -1,6 +1,9 @@
 /* 阅读弹窗：手机优先，后载入以覆盖桌面样式。 */
-.dialog-actions { position:absolute; top:0; right:0; left:0; z-index:3; display:flex; justify-content:flex-end; align-items:center; height:58px; padding:0 22px; background:#fffefa; border-bottom:1px solid #edf1ee; }
+.dialog-actions { position:absolute; top:0; right:0; left:0; z-index:3; display:flex; justify-content:flex-end; align-items:center; gap:10px; height:58px; padding:0 22px; background:#fffefa; border-bottom:1px solid #edf1ee; }
+.top-button,
 .close { display:grid; place-items:center; width:29px; height:29px; padding:0; border:0; background:#182321; color:#fff; border-radius:50%; font-size:22px; font-weight:300; line-height:1; cursor:pointer; box-shadow:0 2px 8px #10251e24; -webkit-tap-highlight-color:transparent; }
+.top-button[hidden] { display:none; }
+.top-button span,
 .close span { font-size:22px; line-height:1; margin:0; vertical-align:0; }
 .close:focus-visible { outline:2px solid #0d6b59; outline-offset:3px; }
 .close:hover { background:#0d6b59; }
@@ -10,7 +13,9 @@
   dialog { position:fixed; inset:0; width:100dvw; max-width:none; height:100dvh; max-height:none; margin:0; border-radius:0; overflow:hidden; }
   .dialog-actions { height:calc(52px + env(safe-area-inset-top)); padding:env(safe-area-inset-top) 18px 0; }
   dialog article { position:absolute; inset:calc(52px + env(safe-area-inset-top)) 0 0; height:auto; overflow-y:auto; padding:18px 20px calc(38px + env(safe-area-inset-bottom)); }
+  .top-button,
   .close { width:28px; height:28px; font-size:21px; }
+  .top-button span,
   .close span { font-size:21px; }
   #note-detail > .note-meta { padding-right:52px; font-size:12px; }
   #note-detail > h1 { font-size:27px; line-height:1.17; margin:14px 50px 0 0; }
