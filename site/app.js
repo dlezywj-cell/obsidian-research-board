@@ -1,4 +1,5 @@
 const state = { notes: [], query: '', category: '全部' };
+let controlsTimer;
 const $ = (selector) => document.querySelector(selector);
 const escape = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const categories = ['全部', '公司研究', '行业研究', '信息卡片'];
@@ -37,6 +38,7 @@ function openNote(note) {
   const bodyWithoutTitle = note.content.replace(/^#\s+.+\r?\n+/, '');
   $('#note-detail').innerHTML = `<div class="note-meta"><span class="badge ${note.category}">${note.category}</span><time>${escape(note.date || '日期未标注')}</time></div><h1>${escape(note.title)}</h1>${chips([...note.companies, ...note.industries, ...note.topics, ...note.tags])}<p class="path">${escape(note.path)}</p><div class="markdown">${markdown(bodyWithoutTitle)}</div>`;
   const dialog = $('#note-dialog');
+  clearTimeout(controlsTimer);
   dialog.classList.remove('controls-visible');
   dialog.querySelector('article').scrollTop = 0;
   dialog.showModal();
@@ -51,7 +53,10 @@ function init(data) {
   $('#search').addEventListener('input', (event) => { state.query = event.target.value; render(); });
   $('#close').addEventListener('click', () => $('#note-dialog').close());
   $('#note-dialog article').addEventListener('scroll', (event) => {
-    $('#note-dialog').classList.toggle('controls-visible', event.currentTarget.scrollTop >= 160);
+    const dialog = $('#note-dialog');
+    dialog.classList.add('controls-visible');
+    clearTimeout(controlsTimer);
+    controlsTimer = setTimeout(() => dialog.classList.remove('controls-visible'), 850);
   });
   $('#note-dialog').addEventListener('click', (event) => { if (event.target === $('#note-dialog')) $('#note-dialog').close(); });
   render();
