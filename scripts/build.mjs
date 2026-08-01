@@ -86,7 +86,7 @@ notes.sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.title.local
 
 await rm(outputRoot, { recursive: true, force: true });
 await mkdir(outputRoot, { recursive: true });
-for (const asset of ['index.html', 'app.js', 'styles.css']) {
+for (const asset of ['index.html', 'app.js', 'styles.css', 'mobile.css']) {
   await writeFile(join(outputRoot, asset), await readFile(join(siteRoot, 'site', asset), 'utf8'));
 }
 await writeFile(join(outputRoot, 'data.json'), JSON.stringify({
