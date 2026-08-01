@@ -19,11 +19,11 @@ async function isProcessedCard(file) {
   return /^status:\s*已处理\s*$/m.test(first);
 }
 
-// 目录由该脚本完全管理；输出端永远只会包含发布白名单中的 Markdown 笔记。
-await rm(exportRoot, { recursive: true, force: true });
+// 仅清空本脚本管理的白名单目录，保留私有资料仓自身的 Git 元数据与仓库配置。
 await mkdir(exportRoot, { recursive: true });
 let count = 0;
 for (const root of allowedRoots) {
+  await rm(join(exportRoot, root), { recursive: true, force: true });
   for (const file of await walk(join(vaultRoot, root))) {
     if (root === '03 信息卡片' && !(await isProcessedCard(file))) continue;
     const destination = join(exportRoot, relative(vaultRoot, file));
