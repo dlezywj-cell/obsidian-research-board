@@ -6,7 +6,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "build": "node scripts/build.mjs && vite build",
+    "build": "node scripts/build.mjs",
     "export:source": "node scripts/export-source.mjs",
     "dev": "node scripts/serve.mjs",
     "test": "npm run build",

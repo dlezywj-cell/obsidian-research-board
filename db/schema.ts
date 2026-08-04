@@ -1,14 +1,4 @@
-import { index, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
-
-export const readingStatuses = sqliteTable(
-  "reading_statuses",
-  {
-    readerKey: text("reader_key").notNull(),
-    noteId: text("note_id").notNull(),
-    readAt: text("read_at").notNull(),
-  },
-  (table) => [
-    primaryKey({ columns: [table.readerKey, table.noteId], name: "reading_statuses_reader_note_pk" }),
-    index("idx_reading_statuses_reader_key").on(table.readerKey),
-  ],
-);
+// Intentionally empty by default.
+// Add Drizzle tables here when the site actually needs a database.
+// See examples/d1/db/schema.ts for an opt-in example.
+export {};

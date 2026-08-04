@@ -24,7 +24,7 @@
         </div>
         <div class="hero-footer">
           <p class="scope">仅收录：公司研究、行业研究、已处理的信息卡片</p>
-          <div class="hero-tools"><button id="sync-settings" class="sync-settings" type="button">同步阅读进度</button><p class="updated" id="updated"></p></div>
+          <p class="updated" id="updated"></p>
         </div>
       </header>
       <section class="controls" aria-label="检索与筛选">
@@ -43,16 +43,6 @@
       <article>
         <div id="note-detail"></div>
       </article>
-    </dialog>
-    <dialog id="sync-dialog" class="sync-dialog">
-      <form id="sync-form" method="dialog">
-        <p class="eyebrow">READING SYNC</p>
-        <h2>同步阅读进度</h2>
-        <p>设置一个仅供自己使用的同步码；在电脑和手机输入同一同步码，已读状态就会自动同步。</p>
-        <label>同步码<input id="sync-code" type="password" minlength="12" autocomplete="new-password" placeholder="至少 12 个字符" required /></label>
-        <p id="sync-error" class="sync-error" aria-live="polite"></p>
-        <div class="sync-actions"><button id="sync-cancel" class="secondary" type="button">暂不设置</button><button class="primary" type="submit">保存并同步</button></div>
-      </form>
     </dialog>
     <script type="module" src="app.js?v=iphone13pm-7"></script>
   </body>
