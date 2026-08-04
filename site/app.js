@@ -1,4 +1,4 @@
-const state = { notes: [], query: '', category: '全部' };
+const state = { notes: [], query: '', category: '全部', readIds: new Set(), readerKey: '' };
 let controlsTimer;
 const $ = (selector) => document.querySelector(selector);
 const escape = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -28,13 +28,15 @@ function render() {
   const notes = filtered();
   $('#result-count').textContent = `找到 ${notes.length} 篇笔记`;
   $('#notes').innerHTML = notes.map((note, index) => `<button class="note-card" data-index="${state.notes.indexOf(note)}">
+    <span class="read-dot ${state.readerKey && state.readIds.has(note.id) ? 'read' : 'unread'}" aria-label="${state.readerKey && state.readIds.has(note.id) ? '已读' : '未读'}" title="${state.readerKey && state.readIds.has(note.id) ? '已读' : '未读'}"></span>
     <div class="note-meta"><span class="badge ${note.category}">${note.category}</span><time>${escape(note.date || '日期未标注')}</time></div>
     <h2>${escape(note.title)}</h2><p>${escape(excerpt(note.content))}${note.content.length > 150 ? '…' : ''}</p>
     ${chips([...note.companies, ...note.industries, ...note.topics].slice(0, 5))}
     <small>${escape(note.path)}</small></button>`).join('') || '<p class="empty">没有匹配的笔记。</p>';
   document.querySelectorAll('.note-card').forEach((card) => card.addEventListener('click', () => openNote(state.notes[card.dataset.index])));
 }
-function openNote(note) {
+async function openNote(note) {
+  markRead(note);
   const bodyWithoutTitle = note.content.replace(/^#\s+.+\r?\n+/, '');
   $('#note-detail').innerHTML = `<div class="note-meta"><span class="badge ${note.category}">${note.category}</span><time>${escape(note.date || '日期未标注')}</time></div><h1>${escape(note.title)}</h1>${chips([...note.companies, ...note.industries, ...note.topics, ...note.tags])}<p class="path">${escape(note.path)}</p><div class="markdown">${markdown(bodyWithoutTitle)}</div>`;
   const dialog = $('#note-dialog');
@@ -43,6 +45,22 @@ function openNote(note) {
   dialog.querySelector('article').scrollTop = 0;
   dialog.showModal();
 }
+async function digest(code) { const bytes = new TextEncoder().encode(`investment-board:${code}`); const hash = await crypto.subtle.digest('SHA-256', bytes); return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join(''); }
+async function loadReadStatuses() {
+  if (!state.readerKey || !state.notes.length) return;
+  const noteIds = state.notes.map((note) => note.id).join(',');
+  const response = await fetch(`/api/reading-status?noteIds=${encodeURIComponent(noteIds)}`, { headers: { 'X-Reader-Key': state.readerKey } });
+  if (!response.ok) throw new Error('无法读取同步状态');
+  state.readIds = new Set((await response.json()).readIds); render();
+}
+async function markRead(note) {
+  if (!state.readerKey || state.readIds.has(note.id)) return;
+  state.readIds.add(note.id); render();
+  try { const response = await fetch('/api/reading-status', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Reader-Key': state.readerKey }, body: JSON.stringify({ noteId: note.id }) }); if (!response.ok) throw new Error('无法保存同步状态'); }
+  catch { state.readIds.delete(note.id); render(); }
+}
+function showSyncDialog() { $('#sync-dialog').showModal(); }
+async function saveSyncCode(code) { state.readerKey = await digest(code); localStorage.setItem('research-board-reader-key', state.readerKey); await loadReadStatuses(); }
 function init(data) {
   state.notes = data.notes;
   $('#summary').textContent = `${data.notes.length} 篇可检索笔记，专注于公司、行业与已处理信息。`;
@@ -59,6 +77,16 @@ function init(data) {
     controlsTimer = setTimeout(() => dialog.classList.remove('controls-visible'), 1700);
   });
   $('#note-dialog').addEventListener('click', (event) => { if (event.target === $('#note-dialog')) $('#note-dialog').close(); });
+  $('#sync-settings').addEventListener('click', showSyncDialog);
+  $('#sync-cancel').addEventListener('click', () => $('#sync-dialog').close());
+  $('#sync-form').addEventListener('submit', async (event) => {
+    event.preventDefault(); const code = $('#sync-code').value;
+    if (code.length < 12) { $('#sync-error').textContent = '同步码至少需要 12 个字符。'; return; }
+    try { await saveSyncCode(code); $('#sync-dialog').close(); } catch { $('#sync-error').textContent = '暂时无法同步，请稍后再试。'; }
+  });
+  $('#sync-dialog').addEventListener('close', () => { $('#sync-code').value = ''; $('#sync-error').textContent = ''; });
   render();
+  state.readerKey = localStorage.getItem('research-board-reader-key') || '';
+  if (state.readerKey) loadReadStatuses().catch(() => { state.readerKey = ''; render(); }); else showSyncDialog();
 }
 fetch('data.json').then((response) => response.json()).then(init).catch(() => { $('#summary').textContent = '数据尚未生成，请先运行构建。'; });

@@ -1,10 +1,19 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { resolve, relative, join, dirname, extname, basename } from 'node:path';
 
 const siteRoot = resolve(import.meta.dirname, '..');
 const vaultRoot = resolve(process.env.KNOWLEDGE_BASE_DIR || join(siteRoot, '..', '投资研究库'));
-const outputRoot = resolve(siteRoot, 'docs');
+const outputRoots = [resolve(siteRoot, 'docs'), resolve(siteRoot, 'public', 'board')];
 const allowedRoots = ['01 公司研究', '02 行业研究', '03 信息卡片'];
+
+// 云端部署使用仓库内已生成的公开快照；本地或 GitHub Actions 读取知识库后会刷新它。
+const hasKnowledgeSource = (await Promise.all(allowedRoots.map(async (path) => {
+  try { await access(join(vaultRoot, path)); return true; } catch { return false; }
+}))).every(Boolean);
+if (!hasKnowledgeSource) {
+  console.log('未发现本地知识库，保留仓库内的公开资料快照。');
+  process.exit(0);
+}
 
 function parseScalar(value) {
   const clean = value.trim().replace(/^['"]|['"]$/g, '');
@@ -84,15 +93,19 @@ for (const file of allFiles) {
 }
 notes.sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.title.localeCompare(b.title, 'zh-CN'));
 
-await rm(outputRoot, { recursive: true, force: true });
-await mkdir(outputRoot, { recursive: true });
-for (const asset of ['index.html', 'app.js', 'styles.css', 'mobile.css']) {
-  await writeFile(join(outputRoot, asset), await readFile(join(siteRoot, 'site', asset), 'utf8'));
-}
-await writeFile(join(outputRoot, 'data.json'), JSON.stringify({
+const payload = JSON.stringify({
   generatedAt: new Date().toISOString(),
   policy: '仅发布公司研究、行业研究和状态为“已处理”的信息卡片。',
   notes,
-}, null, 2));
-await writeFile(join(outputRoot, '.nojekyll'), '');
-console.log(`已生成 ${notes.length} 篇公开笔记：${outputRoot}`);
+}, null, 2);
+
+for (const outputRoot of outputRoots) {
+  await rm(outputRoot, { recursive: true, force: true });
+  await mkdir(outputRoot, { recursive: true });
+  for (const asset of ['index.html', 'app.js', 'styles.css', 'mobile.css']) {
+    await writeFile(join(outputRoot, asset), await readFile(join(siteRoot, 'site', asset), 'utf8'));
+  }
+  await writeFile(join(outputRoot, 'data.json'), payload);
+  await writeFile(join(outputRoot, '.nojekyll'), '');
+}
+console.log(`已生成 ${notes.length} 篇公开笔记：${outputRoots.join('、')}`);
