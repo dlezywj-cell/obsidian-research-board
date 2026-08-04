@@ -3,6 +3,9 @@ name: 发布知识看板
 on:
   workflow_dispatch:
 
+env:
+  KNOWLEDGE_REPO_TOKEN_PRESENT: ${{ secrets.KNOWLEDGE_REPO_TOKEN != '' }}
+
 permissions:
   contents: read
   pages: write
@@ -24,7 +27,7 @@ jobs:
         with:
           path: board
       - name: 取得私有资料仓的发布分支
-        if: ${{ secrets.KNOWLEDGE_REPO_TOKEN != '' && vars.KNOWLEDGE_SOURCE_REPOSITORY != '' }}
+        if: ${{ env.KNOWLEDGE_REPO_TOKEN_PRESENT == 'true' && vars.KNOWLEDGE_SOURCE_REPOSITORY != '' }}
         uses: actions/checkout@v4
         with:
           repository: ${{ vars.KNOWLEDGE_SOURCE_REPOSITORY }}
@@ -34,7 +37,7 @@ jobs:
         with:
           node-version: 22
       - run: npm run build
-        if: ${{ secrets.KNOWLEDGE_REPO_TOKEN != '' && vars.KNOWLEDGE_SOURCE_REPOSITORY != '' }}
+        if: ${{ env.KNOWLEDGE_REPO_TOKEN_PRESENT == 'true' && vars.KNOWLEDGE_SOURCE_REPOSITORY != '' }}
         working-directory: board
         env:
           KNOWLEDGE_BASE_DIR: ${{ github.workspace }}/knowledge-vault
