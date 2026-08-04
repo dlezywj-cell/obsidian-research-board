@@ -48,7 +48,7 @@ async function openNote(note) {
 async function digest(code) { const bytes = new TextEncoder().encode(`investment-board:${code}`); const hash = await crypto.subtle.digest('SHA-256', bytes); return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join(''); }
 async function loadReadStatuses() {
   if (!state.readerKey || !state.notes.length) return;
-  const batches = Array.from({ length: Math.ceil(state.notes.length / 200) }, (_, index) => state.notes.slice(index * 200, (index + 1) * 200));
+  const batches = Array.from({ length: Math.ceil(state.notes.length / 50) }, (_, index) => state.notes.slice(index * 50, (index + 1) * 50));
   const responses = await Promise.all(batches.map(async (notes) => {
     const noteIds = notes.map((note) => note.id).join(',');
     const response = await fetch(`/api/reading-status?noteIds=${encodeURIComponent(noteIds)}`, { headers: { 'X-Reader-Key': state.readerKey } });
