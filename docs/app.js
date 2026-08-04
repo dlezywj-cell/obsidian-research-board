@@ -48,10 +48,14 @@ async function openNote(note) {
 async function digest(code) { const bytes = new TextEncoder().encode(`investment-board:${code}`); const hash = await crypto.subtle.digest('SHA-256', bytes); return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join(''); }
 async function loadReadStatuses() {
   if (!state.readerKey || !state.notes.length) return;
-  const noteIds = state.notes.map((note) => note.id).join(',');
-  const response = await fetch(`/api/reading-status?noteIds=${encodeURIComponent(noteIds)}`, { headers: { 'X-Reader-Key': state.readerKey } });
-  if (!response.ok) throw new Error('无法读取同步状态');
-  state.readIds = new Set((await response.json()).readIds); render();
+  const batches = Array.from({ length: Math.ceil(state.notes.length / 200) }, (_, index) => state.notes.slice(index * 200, (index + 1) * 200));
+  const responses = await Promise.all(batches.map(async (notes) => {
+    const noteIds = notes.map((note) => note.id).join(',');
+    const response = await fetch(`/api/reading-status?noteIds=${encodeURIComponent(noteIds)}`, { headers: { 'X-Reader-Key': state.readerKey } });
+    if (!response.ok) throw new Error('无法读取同步状态');
+    return (await response.json()).readIds;
+  }));
+  state.readIds = new Set(responses.flat()); render();
 }
 async function markRead(note) {
   if (!state.readerKey || state.readIds.has(note.id)) return;
@@ -77,6 +81,8 @@ function init(data) {
     controlsTimer = setTimeout(() => dialog.classList.remove('controls-visible'), 1700);
   });
   $('#note-dialog').addEventListener('click', (event) => { if (event.target === $('#note-dialog')) $('#note-dialog').close(); });
+  $('#sync-settings').addEventListener('click', showSyncDialog);
+  $('#sync-cancel').addEventListener('click', () => $('#sync-dialog').close());
   $('#sync-form').addEventListener('submit', async (event) => {
     event.preventDefault(); const code = $('#sync-code').value;
     if (code.length < 12) { $('#sync-error').textContent = '同步码至少需要 12 个字符。'; return; }
