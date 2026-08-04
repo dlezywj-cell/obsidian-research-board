@@ -48,14 +48,10 @@ async function openNote(note) {
 async function digest(code) { const bytes = new TextEncoder().encode(`investment-board:${code}`); const hash = await crypto.subtle.digest('SHA-256', bytes); return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join(''); }
 async function loadReadStatuses() {
   if (!state.readerKey || !state.notes.length) return;
-  const batches = Array.from({ length: Math.ceil(state.notes.length / 200) }, (_, index) => state.notes.slice(index * 200, (index + 1) * 200));
-  const responses = await Promise.all(batches.map(async (notes) => {
-    const noteIds = notes.map((note) => note.id).join(',');
-    const response = await fetch(`/api/reading-status?noteIds=${encodeURIComponent(noteIds)}`, { headers: { 'X-Reader-Key': state.readerKey } });
-    if (!response.ok) throw new Error('无法读取同步状态');
-    return (await response.json()).readIds;
-  }));
-  state.readIds = new Set(responses.flat()); render();
+  const noteIds = state.notes.map((note) => note.id).join(',');
+  const response = await fetch(`/api/reading-status?noteIds=${encodeURIComponent(noteIds)}`, { headers: { 'X-Reader-Key': state.readerKey } });
+  if (!response.ok) throw new Error('无法读取同步状态');
+  state.readIds = new Set((await response.json()).readIds); render();
 }
 async function markRead(note) {
   if (!state.readerKey || state.readIds.has(note.id)) return;
