@@ -61,4 +61,4 @@ function init(data) {
   $('#note-dialog').addEventListener('click', (event) => { if (event.target === $('#note-dialog')) $('#note-dialog').close(); });
   render();
 }
-fetch('data.json').then((response) => response.json()).then(init).catch(() => { $('#summary').textContent = '数据尚未生成，请先运行构建。'; });
+fetch('data.json', { cache: 'no-store' }).then((response) => response.json()).then(init).catch(() => { $('#summary').textContent = '数据尚未生成，请先运行构建。'; });
