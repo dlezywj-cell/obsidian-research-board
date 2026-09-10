@@ -6,6 +6,7 @@
 .close:focus-visible { outline:2px solid #0d6b59; outline-offset:3px; }
 .close:hover { color:#0d6b59; background:transparent; }
 .markdown > p:first-child { padding:11px 13px; border-left:3px solid #dce6df; border-radius:0 8px 8px 0; background:#f4f7f4; color:#6b7974; font-size:14px; line-height:1.65; }
+.markdown img { display:block; width:auto; max-width:100%; height:auto; margin:18px 0; border:1px solid #dce6df; border-radius:8px; background:#fff; }
 
 @media (max-width:720px) {
   dialog { position:fixed; inset:0; width:100dvw; max-width:none; height:100dvh; max-height:none; margin:0; border-radius:0; overflow:hidden; }

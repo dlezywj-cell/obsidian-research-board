@@ -1,5 +1,5 @@
 import { cp, mkdir, readdir, readFile, rm } from 'node:fs/promises';
-import { resolve, join, relative, extname } from 'node:path';
+import { resolve, join, relative, extname, dirname } from 'node:path';
 
 const siteRoot = resolve(import.meta.dirname, '..');
 const vaultRoot = resolve(process.env.KNOWLEDGE_BASE_DIR || join(siteRoot, '..', '投资研究库'));
@@ -19,6 +19,24 @@ async function isProcessedCard(file) {
   return /^status:\s*已处理\s*$/m.test(first);
 }
 
+async function copyReferencedLocalImages(file) {
+  const markdown = await readFile(file, 'utf8');
+  const references = [...markdown.matchAll(/!\[[^\]]*\]\(([^\s)]+)(?:\s+[^)]*)?\)/g)].map((match) => match[1]);
+  for (const reference of references) {
+    if (/^(?:https?:|data:|#)/i.test(reference)) continue;
+    const source = resolve(dirname(file), decodeURI(reference));
+    const sourceRelative = relative(vaultRoot, source);
+    if (sourceRelative.startsWith('..') || sourceRelative === '') continue;
+    try {
+      await mkdir(join(exportRoot, dirname(sourceRelative)), { recursive: true });
+      await cp(source, join(exportRoot, sourceRelative));
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+      console.warn(`未找到图片，保留原链接：${reference}`);
+    }
+  }
+}
+
 // 仅清空本脚本管理的白名单目录，保留私有资料仓自身的 Git 元数据与仓库配置。
 await mkdir(exportRoot, { recursive: true });
 let count = 0;
@@ -29,6 +47,7 @@ for (const root of allowedRoots) {
     const destination = join(exportRoot, relative(vaultRoot, file));
     await mkdir(join(destination, '..'), { recursive: true });
     await cp(file, destination);
+    await copyReferencedLocalImages(file);
     count += 1;
   }
 }
