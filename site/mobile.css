@@ -27,4 +27,8 @@
   .markdown > p:first-child { margin-top:0; padding:9px 11px; font-size:13px; line-height:1.62; }
   .markdown h2 { font-size:23px; margin-top:30px; }
   .markdown h3 { font-size:19px; }
+  .markdown .table-wrap { margin:14px 0; padding-bottom:3px; }
+  .markdown table { font-size:13.5px; line-height:1.55; }
+  .markdown td,.markdown th { padding:6px 8px; }
+  .markdown thead th { font-size:13px; }
 }

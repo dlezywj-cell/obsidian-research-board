@@ -6,16 +6,48 @@ const categories = ['全部', '公司研究', '行业研究', '信息卡片'];
 
 function chips(values) { return values?.length ? `<div class="chips">${values.map((x) => `<span>${escape(x)}</span>`).join('')}</div>` : ''; }
 function excerpt(markdown) { return markdown.replace(/^#{1,6}\s+/gm, '').replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, '$2$1').replace(/[*_>`]/g, '').replace(/\s+/g, ' ').slice(0, 150); }
+// GFM 表格：把连续以「|」开头的行渲染成真正的 <table>，否则每行会被拆成独立 <p>，表头与各列无法对齐。
+function tableCells(line) {
+  return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
+}
+function isTableDivider(line = '') {
+  return /^\s*\|?(\s*:?-+:?\s*\|)*\s*:?-+:?\s*\|?\s*$/.test(line);
+}
+function renderTables(text) {
+  const lines = text.split('\n');
+  const output = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const header = lines[index];
+    const divider = lines[index + 1];
+    if (!/^\s*\|/.test(header) || !divider || !isTableDivider(divider)) { output.push(header); continue; }
+    const heads = tableCells(header);
+    const align = tableCells(divider).map((cell) => {
+      const left = cell.startsWith(':');
+      const right = cell.endsWith(':');
+      return left && right ? 'center' : right ? 'right' : left ? 'left' : '';
+    });
+    const style = (position) => (align[position] ? ` style="text-align:${align[position]}"` : '');
+    const rows = [];
+    let cursor = index + 2;
+    while (cursor < lines.length && /^\s*\|/.test(lines[cursor])) { rows.push(tableCells(lines[cursor])); cursor += 1; }
+    const head = heads.map((cell, position) => `<th${style(position)}>${cell}</th>`).join('');
+    const body = rows.map((row) => `<tr>${heads.map((cell, position) => `<td${style(position)}>${row[position] ?? ''}</td>`).join('')}</tr>`).join('');
+    // 单行输出，避免外层 <p> 包裹规则把表格行拆开。
+    output.push(`<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`);
+    index = cursor - 1;
+  }
+  return output.join('\n');
+}
 function markdown(markdownText) {
-  return escape(markdownText)
+  return renderTables(escape(markdownText)
     .replace(/^######\s+(.+)$/gm, '<h6>$1</h6>').replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>')
     .replace(/^####\s+(.+)$/gm, '<h4>$1</h4>').replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
     .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>').replace(/^#\s+(.+)$/gm, '<h1>$1</h1>')
-    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" referrerpolicy="no-referrer">')
+    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" referrerpolicy="no-referrer">'))
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`(.+?)`/g, '<code>$1</code>')
     .replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
     .replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, '<span class="wikilink">$2$1</span>')
-    .replace(/^(?!<h|<ul|<li|<\/ul|<table|<tr|<td|<th|<\/)(.+)$/gm, '<p>$1</p>');
+    .replace(/^(?!<h|<ul|<li|<\/ul|<table|<tr|<td|<th|<div|<thead|<tbody|<\/)(.+)$/gm, '<p>$1</p>');
 }
 function filtered() {
   const needle = state.query.trim().toLowerCase();
