@@ -5,18 +5,36 @@ const escape = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({ '&
 const categories = ['全部', '公司研究', '行业研究', '信息卡片'];
 
 function chips(values) { return values?.length ? `<div class="chips">${values.map((x) => `<span>${escape(x)}</span>`).join('')}</div>` : ''; }
-function excerpt(markdown) { return markdown.replace(/^#{1,6}\s+/gm, '').replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, '$2$1').replace(/[*_>`]/g, '').replace(/\s+/g, ' ').slice(0, 150); }
+function excerpt(markdown) { return markdown.replace(/^#{1,6}\s+/gm, '').replace(/\[\[([^\]|\n]+)\|([^\]\n]+)\]\]/g, '$2').replace(/\[\[([^\]|\n]+)\]\]/g, '$1').replace(/[*_>`]/g, '').replace(/\s+/g, ' ').slice(0, 150); }
 // 行内格式：图片 → 粗体 → 行内代码 → 双链 → 标准链接。
 function inline(text) {
   return text
     .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" referrerpolicy="no-referrer">')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, '<span class="wikilink">$2$1</span>')
+    .replace(/\[\[([^\]|\n]+)\|([^\]\n]+)\]\]/g, '<span class="wikilink">$2</span>')
+    .replace(/\[\[([^\]|\n]+)\]\]/g, '<span class="wikilink">$1</span>')
     .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)\n]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
 }
+// 单元格切分：不切 [[...]] 内部的竖线，并把 \| 还原；避免 [[路径|显示名]] 在表格里被截断。
+function splitCells(text) {
+  const cells = [];
+  let current = '';
+  let inLink = false;
+  for (let position = 0; position < text.length; position += 1) {
+    const char = text[position];
+    if (char === '[' && text[position + 1] === '[') { inLink = true; current += '[['; position += 1; continue; }
+    if (inLink && char === ']' && text[position + 1] === ']') { inLink = false; current += ']]'; position += 1; continue; }
+    if (char === '\\' && text[position + 1] === '|') { current += '|'; position += 1; continue; }
+    if (char === '|' && !inLink) { cells.push(current); current = ''; continue; }
+    current += char;
+  }
+  cells.push(current);
+  return cells;
+}
 function tableCells(line) {
-  return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
+  const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+  return splitCells(trimmed).map((cell) => cell.trim());
 }
 function isTableDivider(line = '') {
   return /^\s*\|?(\s*:?-+:?\s*\|)*\s*:?-+:?\s*\|?\s*$/.test(line);
@@ -46,8 +64,8 @@ function markdown(markdownText) {
       const rows = [];
       let cursor = index + 2;
       while (cursor < lines.length && /^\s*\|/.test(lines[cursor])) { rows.push(tableCells(lines[cursor])); cursor += 1; }
-      const head = heads.map((cell, position) => `<th${style(position)}>${cell}</th>`).join('');
-      const body = rows.map((row) => `<tr>${heads.map((cell, position) => `<td${style(position)}>${row[position] ?? ''}</td>`).join('')}</tr>`).join('');
+      const head = heads.map((cell, position) => `<th${style(position)}>${inline(cell)}</th>`).join('');
+      const body = rows.map((row) => `<tr>${heads.map((cell, position) => `<td${style(position)}>${inline(row[position] ?? '')}</td>`).join('')}</tr>`).join('');
       output.push(`<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`);
       index = cursor - 1;
       continue;
