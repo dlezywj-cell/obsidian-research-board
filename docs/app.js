@@ -1,5 +1,4 @@
 const state = { notes: [], query: '', category: '全部' };
-let controlsTimer;
 const $ = (selector) => document.querySelector(selector);
 const escape = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const categories = ['全部', '公司研究', '行业研究', '信息卡片'];
@@ -133,10 +132,61 @@ function openNote(note) {
   const bodyWithoutTitle = note.content.replace(/^#\s+.+\r?\n+/, '');
   $('#note-detail').innerHTML = `<div class="note-meta"><span class="badge ${note.category}">${note.category}</span><time>${escape(note.date || '日期未标注')}</time></div><h1>${escape(note.title)}</h1>${chips([...note.companies, ...note.industries, ...note.topics, ...note.tags])}<p class="path">${escape(note.path)}</p><div class="markdown">${markdown(bodyWithoutTitle)}</div>`;
   const dialog = $('#note-dialog');
-  clearTimeout(controlsTimer);
   dialog.classList.remove('controls-visible');
   dialog.querySelector('article').scrollTop = 0;
   dialog.showModal();
+}
+// 鼠标靠近阅读窗口右上角时才显示关闭按钮；滚动不改变显示状态。
+function setupDismissGestures(dialog) {
+  dialog.addEventListener('pointermove', (event) => {
+    if (event.pointerType !== 'mouse') return;
+    const bounds = dialog.getBoundingClientRect();
+    dialog.classList.toggle('controls-visible',
+      event.clientX >= bounds.right - 112 && event.clientX <= bounds.right &&
+      event.clientY >= bounds.top && event.clientY <= bounds.top + 96);
+  });
+  dialog.addEventListener('pointerleave', () => dialog.classList.remove('controls-visible'));
+
+  const article = dialog.querySelector('article');
+  let swipe = null;
+  const reset = () => { swipe = null; };
+  article.addEventListener('touchstart', (event) => {
+    reset();
+    if (event.touches.length !== 1 || !matchMedia('(max-width: 720px)').matches ||
+        event.target.closest('a, button, input, textarea, select, .table-wrap, pre') ||
+        window.getSelection()?.toString()) return;
+    const touch = event.touches[0];
+    swipe = { id: touch.identifier, x: touch.clientX, y: touch.clientY, time: performance.now(), horizontal: false };
+  }, { passive: true });
+  article.addEventListener('touchmove', (event) => {
+    if (!swipe) return;
+    if (event.touches.length !== 1) { reset(); return; }
+    const touch = event.touches[0];
+    const dx = touch.clientX - swipe.x;
+    const dy = Math.abs(touch.clientY - swipe.y);
+    if (!swipe.horizontal && Math.max(Math.abs(dx), dy) >= 12) {
+      if (dx <= dy * 1.5) { reset(); return; }
+      swipe.horizontal = true;
+    }
+    // 只在已确认向右滑动时阻止原生滚动；上下阅读保持原生体验。
+    if (swipe.horizontal && event.cancelable) event.preventDefault();
+  }, { passive: false });
+  article.addEventListener('touchend', (event) => {
+    if (!swipe) return;
+    const touch = Array.from(event.changedTouches).find((item) => item.identifier === swipe.id);
+    if (touch && swipe.horizontal && !event.touches.length &&
+        touch.clientX - swipe.x >= 90 &&
+        touch.clientX - swipe.x > Math.abs(touch.clientY - swipe.y) * 1.5 &&
+        performance.now() - swipe.time < 1000 && !window.getSelection()?.toString()) {
+      dialog.close();
+    }
+    reset();
+  }, { passive: true });
+  article.addEventListener('touchcancel', reset, { passive: true });
+  dialog.addEventListener('close', () => {
+    reset();
+    dialog.classList.remove('controls-visible');
+  });
 }
 function init(data) {
   state.notes = data.notes;
@@ -147,12 +197,7 @@ function init(data) {
   document.querySelectorAll('.filter').forEach((button) => button.addEventListener('click', () => { state.category = button.dataset.category; document.querySelectorAll('.filter').forEach((x) => x.classList.toggle('selected', x === button)); render(); }));
   $('#search').addEventListener('input', (event) => { state.query = event.target.value; render(); });
   $('#close').addEventListener('click', () => $('#note-dialog').close());
-  $('#note-dialog article').addEventListener('scroll', (event) => {
-    const dialog = $('#note-dialog');
-    dialog.classList.add('controls-visible');
-    clearTimeout(controlsTimer);
-    controlsTimer = setTimeout(() => dialog.classList.remove('controls-visible'), 1700);
-  });
+  setupDismissGestures($('#note-dialog'));
   $('#note-dialog').addEventListener('click', (event) => { if (event.target === $('#note-dialog')) $('#note-dialog').close(); });
   render();
 }

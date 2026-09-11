@@ -1,6 +1,6 @@
 /* 阅读弹窗：手机优先，后载入以覆盖桌面样式。 */
 .dialog-actions { position:absolute; top:12px; right:16px; z-index:3; height:auto; display:flex; justify-content:flex-end; align-items:center; padding:0; opacity:0; pointer-events:none; transform:translateY(-5px); transition:opacity 160ms ease, transform 160ms ease; }
-.controls-visible .dialog-actions { opacity:1; pointer-events:auto; transform:translateY(0); }
+.controls-visible .dialog-actions, .dialog-actions:has(.close:focus-visible) { opacity:1; pointer-events:auto; transform:translateY(0); }
 .close { display:grid; place-items:center; width:44px; height:44px; padding:0; border:1px solid #dce6df; background:rgba(255,255,255,.96); color:#52665e; border-radius:50%; font-size:24px; font-weight:300; line-height:1; cursor:pointer; box-shadow:0 3px 14px #10251e14; transition:background 160ms ease, box-shadow 160ms ease; -webkit-tap-highlight-color:transparent; }
 .close span { font-size:24px; line-height:1; margin:0; vertical-align:0; }
 .close:focus-visible { outline:2px solid #0d6b59; outline-offset:3px; }
@@ -35,4 +35,12 @@
   .markdown blockquote p { font-size:13.5px; line-height:1.68; }
   .markdown pre { margin:13px 0; padding:11px 12px; }
   .markdown pre code { font-size:12.5px; }
+}
+
+/* 无悬停能力的触屏保留按钮作为手势之外的退出方式。 */
+@media (hover: none) {
+  .dialog-actions { opacity:1; pointer-events:auto; transform:none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialog-actions, .close { transition:none; }
 }
