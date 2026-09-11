@@ -6,48 +6,92 @@ const categories = ['全部', '公司研究', '行业研究', '信息卡片'];
 
 function chips(values) { return values?.length ? `<div class="chips">${values.map((x) => `<span>${escape(x)}</span>`).join('')}</div>` : ''; }
 function excerpt(markdown) { return markdown.replace(/^#{1,6}\s+/gm, '').replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, '$2$1').replace(/[*_>`]/g, '').replace(/\s+/g, ' ').slice(0, 150); }
-// GFM 表格：把连续以「|」开头的行渲染成真正的 <table>，否则每行会被拆成独立 <p>，表头与各列无法对齐。
+// 行内格式：图片 → 粗体 → 行内代码 → 双链 → 标准链接。
+function inline(text) {
+  return text
+    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" referrerpolicy="no-referrer">')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, '<span class="wikilink">$2$1</span>')
+    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)\n]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+}
 function tableCells(line) {
   return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
 }
 function isTableDivider(line = '') {
   return /^\s*\|?(\s*:?-+:?\s*\|)*\s*:?-+:?\s*\|?\s*$/.test(line);
 }
-function renderTables(text) {
-  const lines = text.split('\n');
+// 逐行块级解析：代码围栏、表格、标题、分隔线、图片、引用块、无序/有序列表、段落。
+// 所有块级判定都要求从第 0 列开始，与库内正文（含公众号原文转存）的既有排版保持一致。
+function markdown(markdownText) {
+  const lines = escape(markdownText).split('\n');
   const output = [];
   for (let index = 0; index < lines.length; index += 1) {
-    const header = lines[index];
-    const divider = lines[index + 1];
-    if (!/^\s*\|/.test(header) || !divider || !isTableDivider(divider)) { output.push(header); continue; }
-    const heads = tableCells(header);
-    const align = tableCells(divider).map((cell) => {
-      const left = cell.startsWith(':');
-      const right = cell.endsWith(':');
-      return left && right ? 'center' : right ? 'right' : left ? 'left' : '';
-    });
-    const style = (position) => (align[position] ? ` style="text-align:${align[position]}"` : '');
-    const rows = [];
-    let cursor = index + 2;
-    while (cursor < lines.length && /^\s*\|/.test(lines[cursor])) { rows.push(tableCells(lines[cursor])); cursor += 1; }
-    const head = heads.map((cell, position) => `<th${style(position)}>${cell}</th>`).join('');
-    const body = rows.map((row) => `<tr>${heads.map((cell, position) => `<td${style(position)}>${row[position] ?? ''}</td>`).join('')}</tr>`).join('');
-    // 单行输出，避免外层 <p> 包裹规则把表格行拆开。
-    output.push(`<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`);
-    index = cursor - 1;
+    const line = lines[index];
+    if (/^```/.test(line)) {
+      const buffer = [];
+      index += 1;
+      while (index < lines.length && !/^```/.test(lines[index])) { buffer.push(lines[index]); index += 1; }
+      output.push(`<pre><code>${buffer.join('&#10;')}</code></pre>`);
+      continue;
+    }
+    if (/^\s*\|/.test(line) && isTableDivider(lines[index + 1])) {
+      const heads = tableCells(line);
+      const align = tableCells(lines[index + 1]).map((cell) => {
+        const left = cell.startsWith(':');
+        const right = cell.endsWith(':');
+        return left && right ? 'center' : right ? 'right' : left ? 'left' : '';
+      });
+      const style = (position) => (align[position] ? ` style="text-align:${align[position]}"` : '');
+      const rows = [];
+      let cursor = index + 2;
+      while (cursor < lines.length && /^\s*\|/.test(lines[cursor])) { rows.push(tableCells(lines[cursor])); cursor += 1; }
+      const head = heads.map((cell, position) => `<th${style(position)}>${cell}</th>`).join('');
+      const body = rows.map((row) => `<tr>${heads.map((cell, position) => `<td${style(position)}>${row[position] ?? ''}</td>`).join('')}</tr>`).join('');
+      output.push(`<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`);
+      index = cursor - 1;
+      continue;
+    }
+    const heading = line.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) { output.push(`<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>`); continue; }
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) { output.push('<hr>'); continue; }
+    if (/^!\[/.test(line)) { output.push(inline(line)); continue; }
+    // 引用块：escape() 已把行首的 > 转成 &gt;，因此按实体匹配。
+    if (/^&gt;/.test(line)) {
+      const quotes = [];
+      while (index < lines.length && /^&gt;/.test(lines[index])) {
+        const text = lines[index].replace(/^&gt;[ \t]?/, '').trim();
+        if (text) quotes.push(text);
+        index += 1;
+      }
+      index -= 1;
+      output.push(`<blockquote>${quotes.map((text) => `<p>${inline(text)}</p>`).join('')}</blockquote>`);
+      continue;
+    }
+    if (/^[-*]\s+/.test(line)) {
+      const items = [];
+      while (index < lines.length && /^[-*]\s+/.test(lines[index])) {
+        items.push(`<li>${inline(lines[index].replace(/^[-*]\s+/, ''))}</li>`);
+        index += 1;
+      }
+      index -= 1;
+      output.push(`<ul>${items.join('')}</ul>`);
+      continue;
+    }
+    if (/^\d+[.)]\s+/.test(line)) {
+      const items = [];
+      while (index < lines.length && /^\d+[.)]\s+/.test(lines[index])) {
+        items.push(`<li>${inline(lines[index].replace(/^\d+[.)]\s+/, ''))}</li>`);
+        index += 1;
+      }
+      index -= 1;
+      output.push(`<ol>${items.join('')}</ol>`);
+      continue;
+    }
+    if (!line.trim()) { output.push(''); continue; }
+    output.push(`<p>${inline(line.trim())}</p>`);
   }
   return output.join('\n');
-}
-function markdown(markdownText) {
-  return renderTables(escape(markdownText)
-    .replace(/^######\s+(.+)$/gm, '<h6>$1</h6>').replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>')
-    .replace(/^####\s+(.+)$/gm, '<h4>$1</h4>').replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
-    .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>').replace(/^#\s+(.+)$/gm, '<h1>$1</h1>')
-    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" referrerpolicy="no-referrer">'))
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
-    .replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, '<span class="wikilink">$2$1</span>')
-    .replace(/^(?!<h|<ul|<li|<\/ul|<table|<tr|<td|<th|<div|<thead|<tbody|<\/)(.+)$/gm, '<p>$1</p>');
 }
 function filtered() {
   const needle = state.query.trim().toLowerCase();

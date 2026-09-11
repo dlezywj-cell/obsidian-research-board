@@ -31,4 +31,8 @@
   .markdown table { font-size:13.5px; line-height:1.55; }
   .markdown td,.markdown th { padding:6px 8px; }
   .markdown thead th { font-size:13px; }
+  .markdown blockquote { margin:13px 0; padding:9px 11px; }
+  .markdown blockquote p { font-size:13.5px; line-height:1.68; }
+  .markdown pre { margin:13px 0; padding:11px 12px; }
+  .markdown pre code { font-size:12.5px; }
 }
