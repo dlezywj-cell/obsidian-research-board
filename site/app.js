@@ -152,7 +152,7 @@ function setupDismissGestures(dialog) {
   const reset = () => { swipe = null; };
   article.addEventListener('touchstart', (event) => {
     reset();
-    if (event.touches.length !== 1 || !matchMedia('(max-width: 720px)').matches ||
+    if (event.touches.length !== 1 || !matchMedia('(max-width: 720px), (hover: none)').matches ||
         event.target.closest('a, button, input, textarea, select, .table-wrap, pre') ||
         window.getSelection()?.toString()) return;
     const touch = event.touches[0];
