@@ -1,7 +1,7 @@
 const state = { notes: [], query: '', category: '全部' };
 const $ = (selector) => document.querySelector(selector);
 const escape = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
-const categories = ['全部', '公司研究', '行业研究', '信息卡片'];
+const categories = ['全部', '公司研究', '行业研究', '信息卡片', '一级项目'];
 
 function chips(values) { return values?.length ? `<div class="chips">${values.map((x) => `<span>${escape(x)}</span>`).join('')}</div>` : ''; }
 function excerpt(markdown) { return markdown.replace(/^#{1,6}\s+/gm, '').replace(/\[\[([^\]|\n]+)\|([^\]\n]+)\]\]/g, '$2').replace(/\[\[([^\]|\n]+)\]\]/g, '$1').replace(/[*_>`]/g, '').replace(/\s+/g, ' ').slice(0, 150); }
@@ -190,7 +190,7 @@ function setupDismissGestures(dialog) {
 }
 function init(data) {
   state.notes = data.notes;
-  $('#summary').textContent = `${data.notes.length} 篇可检索笔记，专注于公司、行业与已处理信息。`;
+  $('#summary').textContent = `${data.notes.length} 篇可检索笔记，涵盖公司、行业与已处理资料。`;
   $('#updated').textContent = `生成于 ${new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(data.generatedAt))}`;
   $('#filters').innerHTML = categories.map((category) => `<button class="filter ${category === state.category ? 'selected' : ''}" data-category="${category}">${category}</button>`).join('');
   $('#stats').innerHTML = categories.slice(1).map((category) => `<div><b>${data.notes.filter((n) => n.category === category).length}</b><span>${category}</span></div>`).join('');
