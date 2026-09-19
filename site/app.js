@@ -1,7 +1,7 @@
 const state = { notes: [], query: '', category: '全部' };
 const $ = (selector) => document.querySelector(selector);
 const escape = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
-const categories = ['全部', '公司研究', '行业研究', '信息卡片', '一级项目'];
+const categories = ['全部', '公司研究', '行业研究', '信息卡片', '一级项目', '英语'];
 
 function chips(values) { return values?.length ? `<div class="chips">${values.map((x) => `<span>${escape(x)}</span>`).join('')}</div>` : ''; }
 function excerpt(markdown) { return markdown.replace(/^#{1,6}\s+/gm, '').replace(/\[\[([^\]|\n]+)\|([^\]\n]+)\]\]/g, '$2').replace(/\[\[([^\]|\n]+)\]\]/g, '$1').replace(/[*_>`]/g, '').replace(/\s+/g, ' ').slice(0, 150); }

@@ -4,7 +4,7 @@ import { resolve, join, relative, extname, dirname } from 'node:path';
 const siteRoot = resolve(import.meta.dirname, '..');
 const vaultRoot = resolve(process.env.KNOWLEDGE_BASE_DIR || join(siteRoot, '..', '投资研究库'));
 const exportRoot = resolve(process.env.KNOWLEDGE_EXPORT_DIR || join(siteRoot, '..', '公开知识资料'));
-const allowedRoots = ['01 公司研究', '02 行业研究', '03 信息卡片', '07 一级项目'];
+const allowedRoots = ['01 公司研究', '02 行业研究', '03 信息卡片', '07 一级项目', '10 英语练习'];
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
