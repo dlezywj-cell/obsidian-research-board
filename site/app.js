@@ -97,11 +97,27 @@ function markdown(markdownText) {
     }
     if (/^\d+[.)]\s+/.test(line)) {
       const items = [];
-      while (index < lines.length && /^\d+[.)]\s+/.test(lines[index])) {
-        items.push(`<li>${inline(lines[index].replace(/^\d+[.)]\s+/, ''))}</li>`);
-        index += 1;
+      let cursor = index;
+      while (cursor < lines.length && /^\d+[.)]\s+/.test(lines[cursor])) {
+        const item = inline(lines[cursor].replace(/^\d+[.)]\s+/, ''));
+        const continuation = [];
+        cursor += 1;
+        while (cursor < lines.length) {
+          if (/^\s{2,}\S/.test(lines[cursor])) {
+            continuation.push(lines[cursor].trim());
+            cursor += 1;
+            continue;
+          }
+          if (!lines[cursor].trim()) {
+            let next = cursor;
+            while (next < lines.length && !lines[next].trim()) next += 1;
+            if (/^\d+[.)]\s+/.test(lines[next] || '')) { cursor = next; break; }
+          }
+          break;
+        }
+        items.push(`<li>${item}${continuation.length ? `<p>${continuation.map(inline).join('<br>')}</p>` : ''}</li>`);
       }
-      index -= 1;
+      index = cursor - 1;
       output.push(`<ol>${items.join('')}</ol>`);
       continue;
     }
