@@ -39,5 +39,6 @@
 .markdown ul li,.markdown ol li { margin:5px 0; }
 .markdown hr { border:0; border-top:1px solid var(--line); margin:26px 0; }
 .markdown a { color:var(--accent); text-decoration:underline; text-underline-offset:2px; }
+.markdown :not(pre) > code,.markdown a { overflow-wrap:anywhere; }
 .markdown pre { margin:16px 0; padding:13px 15px; border:1px solid var(--line); border-radius:8px; background:#f4f7f4; overflow-x:auto; }
 .markdown pre code { background:transparent; padding:0; font-size:13px; line-height:1.65; white-space:pre; }
