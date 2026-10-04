@@ -9,9 +9,10 @@
 .markdown img { display:block; width:auto; max-width:100%; height:auto; margin:18px 0; border:1px solid #dce6df; border-radius:8px; background:#fff; }
 
 @media (max-width:720px) {
+  html, body { width:100%; overflow-x:hidden; overscroll-behavior-x:none; }
   dialog { position:fixed; inset:0; width:100dvw; max-width:none; height:100dvh; max-height:none; margin:0; border-radius:0; overflow:hidden; }
   .dialog-actions { top:calc(10px + env(safe-area-inset-top)); right:calc(14px + env(safe-area-inset-right)); }
-  dialog article { position:absolute; inset:0; height:auto; overflow-y:auto; padding:calc(20px + env(safe-area-inset-top)) 20px calc(38px + env(safe-area-inset-bottom)); }
+  dialog article { position:absolute; inset:0; height:auto; overflow-x:hidden; overflow-y:auto; overscroll-behavior-x:none; padding:calc(20px + env(safe-area-inset-top)) 20px calc(38px + env(safe-area-inset-bottom)); }
   .close { width:44px; height:44px; font-size:24px; }
   .close span { font-size:24px; }
   #note-detail > .note-meta { padding-right:52px; font-size:12px; }
