@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { resolve, relative, join, dirname, extname, basename } from 'node:path';
 
 const siteRoot = resolve(import.meta.dirname, '..');
@@ -73,12 +73,17 @@ for (const file of allFiles) {
   const category = typeFor(path);
   // 信息卡片必须明确标为“已处理”；公司研究、行业研究、外部观点及英语练习完整保留。
   if (category === '信息卡片' && frontmatter.status !== '已处理') continue;
+  // 发布时刻：取笔记文件在库内的最后写入时间（mtime）。
+  // 用于同一天内的次序——「最新发布的排在最前」。文件缺失时退化为空串，排到该日末尾。
+  let updatedAt = '';
+  try { updatedAt = (await stat(file)).mtime.toISOString(); } catch { updatedAt = ''; }
   notes.push({
     id: path.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, ''),
     title: titleOf(body, file),
     category,
     path,
     date: frontmatter.date || '',
+    updatedAt,
     status: frontmatter.status || '',
     importance: frontmatter.importance || '',
     companies: normalizeList(frontmatter.companies),
@@ -88,7 +93,11 @@ for (const file of allFiles) {
     content: body,
   });
 }
-notes.sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.title.localeCompare(b.title, 'zh-CN'));
+// 排序：① 日期倒序（近的在前）→ ② 同日按发布时刻（文件 mtime）倒序（最新发布的在前）
+// → ③ 兜底按标题 zh-CN 升序，保证 mtime 相同（同批落库）时次序稳定可复现。
+notes.sort((a, b) => (b.date || '').localeCompare(a.date || '')
+  || (b.updatedAt || '').localeCompare(a.updatedAt || '')
+  || a.title.localeCompare(b.title, 'zh-CN'));
 
 await rm(outputRoot, { recursive: true, force: true });
 await mkdir(outputRoot, { recursive: true });
