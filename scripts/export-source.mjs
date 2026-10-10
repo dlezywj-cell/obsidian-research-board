@@ -7,7 +7,10 @@ const exportRoot = resolve(process.env.KNOWLEDGE_EXPORT_DIR || join(siteRoot, '.
 // 2026-10-10：`07 一级项目` 整体移出公开白名单（第三方保密材料），改由私有仓库
 // `dlezywj-cell/obsidian-research-private`（本地克隆 ~/Obsidian/私有研究资料）留存。
 // 不要再把它加回来——如确需发布单篇，先用同步脚本以外的方式单独导出并经用户确认。
-const allowedRoots = ['01 公司研究', '02 行业研究', '03 信息卡片', '10 英语练习'];
+// 2026-10-10（用户明确授权）：把「外部资料」`04 观点与复盘/01 时间线/外部观点` 纳入白名单。
+// 只放开这一个子目录——`04 观点与复盘/` 下的「我的观点 / 周度叙事复盘 / 二级指数复盘 /
+// 个股消息面扫描 / 股票池」等子目录仍不发布。
+const allowedRoots = ['01 公司研究', '02 行业研究', '03 信息卡片', '10 英语练习', '04 观点与复盘/01 时间线/外部观点'];
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
