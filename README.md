@@ -1,9 +1,6 @@
-# 投资研究知识看板（私有）
+# 投资研究知识看板
 
-从本地 Obsidian 知识库生成的纯静态网页。**2026-10-10 起不再对外公开**：原公开看板仓库已转为
-private、Pages 随之下线，本仓库改为在 Vercel 上部署一个**需要登录才能打开**的私有看板。
-
-网页构建时只会读取：
+这是从本地 Obsidian 知识库生成的纯静态网页。网页构建时只会读取：
 
 - `01 公司研究/`
 - `02 行业研究/`
@@ -27,42 +24,18 @@ npm run dev
 
 默认从相邻的 `投资研究库` 读取内容。若资料库另有位置，可在构建时设置 `KNOWLEDGE_BASE_DIR`。
 
-## 私有部署（Vercel）
+## GitHub 发布结构
 
-云端没有本机知识库，而 `scripts/build.mjs` 需要读 `投资研究库` 才能运行，所以**云端不构建**：
-`docs/` 由本地 `npm run build` 生成并提交进仓库，Vercel 只负责静态发布。
-`vercel.json` 已声明跳过依赖安装与构建、输出目录指向 `docs/`。
+建议使用两个仓库：
 
-首次部署：
+1. 私有资料仓：保存从本地导出的允许发布内容；不保存工作计划与一级项目（一级项目另存于独立的私有保密仓）。
+2. 公开网页仓：保存本项目。GitHub Actions checkout 私有资料仓后运行构建，再将 `dist/` 发布至 GitHub Pages。
 
-1. 用 GitHub 账号登录 <https://vercel.com>（Hobby 免费套餐即可，个人用途）。
-2. Add New… → Project → 授权 Vercel 访问 GitHub，选择 `obsidian-research-board` 仓库。
-3. 框架预设与构建参数会被 `vercel.json` 覆盖，直接 Deploy。
-4. 部署完成后进入 **Settings → Deployment Protection**，把 **Vercel Authentication**
-   的范围选为 **All Deployments**（免费）——此后访问部署域名会要求登录有权限的 Vercel 账号，
-   达到「只有自己能打开」。手机与电脑各登录一次，之后靠 cookie 长期免登录。
+在公开网页仓的 GitHub 设置中添加：
 
-### 内容更新流程
+- Repository variable：`KNOWLEDGE_SOURCE_REPOSITORY`，值为私有资料仓的 `账户名/仓库名`。
+- Repository secret：`KNOWLEDGE_REPO_TOKEN`，值为一个仅具有该私有资料仓 Contents: Read 权限的 fine-grained personal access token。
 
-`docs/` 不会自动重建（云端没有源库）。知识库有改动后，在本地跑：
+私有资料仓仅同步：`01 公司研究/`、`02 行业研究/`、已处理的 `03 信息卡片/`，以及 `10 英语练习/`。即使错误放入其他目录，网页构建器也会拒绝读取。
 
-```bash
-cd ~/Obsidian/公开知识看板
-npm run build
-git add docs && git commit -m "更新看板产物" && git push
-```
-
-推送后 Vercel 自动重新部署。
-
-> ⚠️ 部署域名在公网，但受 Deployment Protection 保护，**未登录访客只会看到登录页**。
-> 不要为图方便关掉保护——那等同于回到公开状态。
-
-> 📌 `.github/workflows/publish.yml` 与 GitHub Pages 相关的部署方式**已停用并删除**：
-> 它依赖 `github-pages` 环境和公开 Pages，且需要从私有源仓 checkout 构建。
-> GitHub Pages 在 Free/Pro 套餐下**无法做到站点私有**（只有 Enterprise Cloud 可以），
-> 因此在线看板改走 Vercel。
-
-## 历史：原公开发布结构（已停用）
-
-早期使用两个仓库：`公开知识资料`（私有导出仓）+ 本仓库（公开网页仓），由 GitHub Actions
-checkout 私有源仓后构建并发布至 GitHub Pages。该链路已于 2026-10-10 整体关停。
+公开网页会包含生成后的笔记正文，因此只有确定可公开的内容才应进入私有资料仓的发布分支。首次部署可直接将 `docs/` 设置为 GitHub Pages 的发布目录；配置好私有仓读取凭证后，再从 Actions 页面手动运行仓库附带的更新任务。
