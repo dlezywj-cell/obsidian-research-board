@@ -4,7 +4,10 @@ import { resolve, join, relative, extname, dirname } from 'node:path';
 const siteRoot = resolve(import.meta.dirname, '..');
 const vaultRoot = resolve(process.env.KNOWLEDGE_BASE_DIR || join(siteRoot, '..', '投资研究库'));
 const exportRoot = resolve(process.env.KNOWLEDGE_EXPORT_DIR || join(siteRoot, '..', '公开知识资料'));
-const allowedRoots = ['01 公司研究', '02 行业研究', '03 信息卡片', '07 一级项目', '10 英语练习'];
+// 2026-10-10：`07 一级项目` 整体移出公开白名单（第三方保密材料），改由私有仓库
+// `dlezywj-cell/obsidian-research-private`（本地克隆 ~/Obsidian/私有研究资料）留存。
+// 不要再把它加回来——如确需发布单篇，先用同步脚本以外的方式单独导出并经用户确认。
+const allowedRoots = ['01 公司研究', '02 行业研究', '03 信息卡片', '10 英语练习'];
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -17,12 +20,6 @@ async function walk(directory) {
 async function isProcessedCard(file) {
   const first = (await readFile(file, 'utf8')).slice(0, 3000);
   return /^status:\s*已处理\s*$/m.test(first);
-}
-
-async function isProcessedProject(file) {
-  const first = (await readFile(file, 'utf8')).slice(0, 3000);
-  const frontmatter = first.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] || '';
-  return /^status:\s*已处理\s*$/m.test(frontmatter);
 }
 
 async function copyReferencedLocalImages(file) {
@@ -50,7 +47,6 @@ for (const root of allowedRoots) {
   await rm(join(exportRoot, root), { recursive: true, force: true });
   for (const file of await walk(join(vaultRoot, root))) {
     if (root === '03 信息卡片' && !(await isProcessedCard(file))) continue;
-    if (root === '07 一级项目' && !(await isProcessedProject(file))) continue;
     const destination = join(exportRoot, relative(vaultRoot, file));
     await mkdir(join(destination, '..'), { recursive: true });
     await cp(file, destination);

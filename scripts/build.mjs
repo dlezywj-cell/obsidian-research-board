@@ -4,7 +4,9 @@ import { resolve, relative, join, dirname, extname, basename } from 'node:path';
 const siteRoot = resolve(import.meta.dirname, '..');
 const vaultRoot = resolve(process.env.KNOWLEDGE_BASE_DIR || join(siteRoot, '..', '投资研究库'));
 const outputRoot = resolve(siteRoot, 'docs');
-const allowedRoots = ['01 公司研究', '02 行业研究', '03 信息卡片', '07 一级项目', '10 英语练习'];
+// 2026-10-10：`07 一级项目` 整体移出公开白名单，与 scripts/export-source.mjs 保持一致。
+// 该目录为第三方保密材料，完整副本存于私有仓库 dlezywj-cell/obsidian-research-private。
+const allowedRoots = ['01 公司研究', '02 行业研究', '03 信息卡片', '10 英语练习'];
 
 function parseScalar(value) {
   const clean = value.trim().replace(/^['"]|['"]$/g, '');
@@ -47,7 +49,6 @@ async function filesIn(directory) {
 function typeFor(relativePath) {
   if (relativePath.startsWith('01 公司研究/')) return '公司研究';
   if (relativePath.startsWith('02 行业研究/')) return '行业研究';
-  if (relativePath.startsWith('07 一级项目/')) return '一级项目';
   if (relativePath.startsWith('10 英语练习/')) return '英语';
   return '信息卡片';
 }
@@ -67,8 +68,8 @@ for (const file of allFiles) {
   const [frontmatter, body] = parseFrontmatter(raw);
   const path = relative(vaultRoot, file).split('\\').join('/');
   const category = typeFor(path);
-  // 信息卡片和一级项目必须明确标为“已处理”；公司、行业研究及英语练习完整保留。
-  if (['信息卡片', '一级项目'].includes(category) && frontmatter.status !== '已处理') continue;
+  // 信息卡片必须明确标为“已处理”；公司研究、行业研究及英语练习完整保留。
+  if (category === '信息卡片' && frontmatter.status !== '已处理') continue;
   notes.push({
     id: path.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, ''),
     title: titleOf(body, file),
@@ -93,7 +94,7 @@ for (const asset of ['index.html', 'app.js', 'styles.css', 'mobile.css']) {
 }
 await writeFile(join(outputRoot, 'data.json'), JSON.stringify({
   generatedAt: new Date().toISOString(),
-  policy: '仅发布公司研究、行业研究、英语练习，以及状态为“已处理”的信息卡片和一级项目。',
+  policy: '仅发布公司研究、行业研究、英语练习，以及状态为“已处理”的信息卡片。',
   notes,
 }, null, 2));
 await writeFile(join(outputRoot, '.nojekyll'), '');
