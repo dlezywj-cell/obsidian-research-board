@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo '静态站点：docs/ 已提交，跳过依赖安装'",
+  "buildCommand": "echo 'docs/ 由本地 npm run build 生成并提交，云端无需构建'",
+  "outputDirectory": "docs"
+}
