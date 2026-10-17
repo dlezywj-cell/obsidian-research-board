@@ -4,6 +4,12 @@ const escape = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({ '&
 const categories = ['全部', '公司研究', '行业研究', '信息卡片', '外部观点', '英语'];
 
 function chips(values) { return values?.length ? `<div class="chips">${values.map((x) => `<span>${escape(x)}</span>`).join('')}</div>` : ''; }
+// 事件日：原始报告/调研/公告的发生日期；与发布日不同时才作为次要信息展示。
+function eventHint(note) {
+  if (!note.eventDate || !note.date || note.eventDate === note.date) return '';
+  return `<span class="event-date">事件日 ${escape(note.eventDate)}</span>`;
+}
+
 function excerpt(markdown) { return markdown.replace(/^#{1,6}\s+/gm, '').replace(/\[\[([^\]|\n]+)\|([^\]\n]+)\]\]/g, '$2').replace(/\[\[([^\]|\n]+)\]\]/g, '$1').replace(/[*_>`]/g, '').replace(/\s+/g, ' ').slice(0, 150); }
 // 行内格式：图片 → 粗体 → 行内代码 → 双链 → 标准链接。
 function inline(text) {
@@ -138,7 +144,7 @@ function render() {
   const notes = filtered();
   $('#result-count').textContent = `找到 ${notes.length} 篇笔记`;
   $('#notes').innerHTML = notes.map((note, index) => `<button class="note-card" data-index="${state.notes.indexOf(note)}">
-    <div class="note-meta"><span class="badge ${note.category}">${note.category}</span><time>${escape(note.date || '日期未标注')}</time></div>
+    <div class="note-meta"><span class="badge ${note.category}">${note.category}</span><span class="meta-dates"><time>${escape(note.date || '日期未标注')}</time>${eventHint(note)}</span></div>
     <h2>${escape(note.title)}</h2><p>${escape(excerpt(note.content))}${note.content.length > 150 ? '…' : ''}</p>
     ${chips([...note.companies, ...note.industries, ...note.topics].slice(0, 5))}
     <small>${escape(note.path)}</small></button>`).join('') || '<p class="empty">没有匹配的笔记。</p>';
@@ -146,7 +152,7 @@ function render() {
 }
 function openNote(note) {
   const bodyWithoutTitle = note.content.replace(/^#\s+.+\r?\n+/, '');
-  $('#note-detail').innerHTML = `<div class="note-meta"><span class="badge ${note.category}">${note.category}</span><time>${escape(note.date || '日期未标注')}</time></div><h1>${escape(note.title)}</h1>${chips([...note.companies, ...note.industries, ...note.topics, ...note.tags])}<p class="path">${escape(note.path)}</p><div class="markdown">${markdown(bodyWithoutTitle)}</div>`;
+  $('#note-detail').innerHTML = `<div class="note-meta"><span class="badge ${note.category}">${note.category}</span><span class="meta-dates"><time>${escape(note.date || '日期未标注')}</time>${eventHint(note)}</span></div><h1>${escape(note.title)}</h1>${chips([...note.companies, ...note.industries, ...note.topics, ...note.tags])}<p class="path">${escape(note.path)}</p><div class="markdown">${markdown(bodyWithoutTitle)}</div>`;
   const dialog = $('#note-dialog');
   dialog.classList.remove('controls-visible');
   dialog.querySelector('article').scrollTop = 0;
