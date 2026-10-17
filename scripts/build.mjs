@@ -56,6 +56,17 @@ function typeFor(relativePath) {
   return '信息卡片';
 }
 
+// 发布日：笔记文件在库内的「创建时间」（birthtime），即资料被我收进知识库的那一天。
+// 报告/事件本身的日期仍保留在 frontmatter.date，作为 eventDate 单独输出，不参与排序。
+function publishDateOf(date) {
+  const t = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(t.getTime())) return '';
+  const y = t.getFullYear();
+  const m = String(t.getMonth() + 1).padStart(2, '0');
+  const d = String(t.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function titleOf(body, file) {
   return body.match(/^#\s+(.+)$/m)?.[1]?.trim() || basename(file, '.md');
 }
@@ -73,16 +84,22 @@ for (const file of allFiles) {
   const category = typeFor(path);
   // 信息卡片必须明确标为“已处理”；公司研究、行业研究、外部观点及英语练习完整保留。
   if (category === '信息卡片' && frontmatter.status !== '已处理') continue;
-  // 发布时刻：取笔记文件在库内的最后写入时间（mtime）。
-  // 用于同一天内的次序——「最新发布的排在最前」。文件缺失时退化为空串，排到该日末尾。
+  // publishDate = 文件创建日（入库/发布日，看板按它排序与展示）；
+  // updatedAt = 最后写入时刻，只作为同一天内的次序。文件缺失时退化为空串。
   let updatedAt = '';
-  try { updatedAt = (await stat(file)).mtime.toISOString(); } catch { updatedAt = ''; }
+  let publishDate = '';
+  try {
+    const stats = await stat(file);
+    updatedAt = stats.mtime.toISOString();
+    publishDate = publishDateOf(stats.birthtime);
+  } catch { updatedAt = ''; publishDate = ''; }
   notes.push({
     id: path.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, ''),
     title: titleOf(body, file),
     category,
     path,
-    date: frontmatter.date || '',
+    date: publishDate || frontmatter.date || '',
+    eventDate: frontmatter.date || '',
     updatedAt,
     status: frontmatter.status || '',
     importance: frontmatter.importance || '',
@@ -93,8 +110,9 @@ for (const file of allFiles) {
     content: body,
   });
 }
-// 排序：① 日期倒序（近的在前）→ ② 同日按发布时刻（文件 mtime）倒序（最新发布的在前）
-// → ③ 兜底按标题 zh-CN 升序，保证 mtime 相同（同批落库）时次序稳定可复现。
+// 排序：① 发布日倒序（我最近发布进库的排在最前）→ ② 同日按写入时刻倒序
+// → ③ 兜底按标题 zh-CN 升序，保证同一时刻落库时次序稳定可复现。
+// 事件日（frontmatter.date）不参与排序，只在卡片上作为次要信息展示。
 notes.sort((a, b) => (b.date || '').localeCompare(a.date || '')
   || (b.updatedAt || '').localeCompare(a.updatedAt || '')
   || a.title.localeCompare(b.title, 'zh-CN'));
